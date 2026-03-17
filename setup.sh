@@ -1,7 +1,7 @@
 #!/bin/bash
 
 clear
-echo ">> ZERO V8.5 - EXIS INSTALL"
+echo ">> ZERO V8.6 - EXIS CORE INSTALL"
 
 BASE="$HOME/.hyperion"
 REPO="https://github.com/HyperionLinuxTeam/ZERO"
@@ -12,7 +12,7 @@ REPO="https://github.com/HyperionLinuxTeam/ZERO"
 
 # =========================
 
-sudo pacman -Sy --noconfirm zsh git fzf tmux btop fastfetch figlet
+sudo pacman -Sy --noconfirm git fzf tmux btop fastfetch figlet
 
 # =========================
 
@@ -26,7 +26,7 @@ echo "es" > $BASE/config/lang.conf
 
 # =========================
 
-# BOOT ANIMATION
+# BOOT
 
 # =========================
 
@@ -41,13 +41,13 @@ sleep 0.2
 echo -e "\e[35m[ZERO EXIS] Syncing environment...\e[0m"
 sleep 0.2
 echo -e "\e[32m[OK] System ready\e[0m"
-sleep 0.3
+sleep 0.2
 EOF
 chmod +x $BASE/core/boot.sh
 
 # =========================
 
-# ASCII LOGO
+# LOGO
 
 # =========================
 
@@ -60,7 +60,7 @@ echo "  ███╔╝ █████╗  ██████╔╝██║   
 echo " ███╔╝  ██╔══╝  ██╔══██╗██║   ██║"
 echo "███████╗███████╗██║  ██║╚██████╔╝"
 echo "╚══════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ "
-echo -e "\e[36m        V8.5 - EXIS\e[0m"
+echo -e "\e[36m        V8.6 - EXIS CORE\e[0m"
 echo -e "\e[0m"
 EOF
 chmod +x $BASE/core/logo.sh
@@ -73,7 +73,6 @@ chmod +x $BASE/core/logo.sh
 
 cat > $BASE/core/greeting.sh << 'EOF'
 #!/bin/bash
-
 LANG=$(cat ~/.hyperion/config/lang.conf 2>/dev/null)
 HOUR=$(date +%H)
 USER=$(whoami)
@@ -98,35 +97,57 @@ chmod +x $BASE/core/greeting.sh
 
 cat > $BASE/core/help.sh << 'EOF'
 #!/bin/bash
-LANG=$(cat ~/.hyperion/config/lang.conf 2>/dev/null)
-
-if [ "$LANG" == "en" ]; then
-echo "ZERO V8.5 EXIS COMMANDS:"
-echo " zero --update"
+echo "ZERO COMMANDS:"
 echo " help"
+echo " about"
+echo " info / version"
 echo " lang --en / --es"
-echo " delete --zero"
-else
-echo "COMANDOS ZERO V8.5 EXIS:"
 echo " zero --update"
-echo " help"
-echo " lang --en / --es"
 echo " delete --zero"
-fi
+echo " exit"
 EOF
 chmod +x $BASE/core/help.sh
 
 # =========================
 
-# HELP GLOBAL
+# ABOUT
 
 # =========================
 
-cat > $BASE/bin/help << 'EOF'
+cat > $BASE/core/about.sh << 'EOF'
 #!/bin/bash
-~/.hyperion/core/help.sh
+clear
+echo "========== ZERO V8.6 EXIS =========="
+echo ""
+echo "GitHub:"
+echo "https://github.com/HyperionLinuxTeam/ZERO"
+echo ""
+echo "Web:"
+echo "https://hyperionlinuxteam.github.io/ZERO/"
+echo ""
+echo "Equipo:"
+echo "https://hyperionlinuxteam.github.io"
+echo ""
+echo "User: $(whoami)"
+echo "Host: $(hostname)"
+echo "===================================="
 EOF
-chmod +x $BASE/bin/help
+chmod +x $BASE/core/about.sh
+
+# =========================
+
+# VERSION
+
+# =========================
+
+cat > $BASE/core/version.sh << 'EOF'
+#!/bin/bash
+echo "ZERO V8.6 - EXIS CORE"
+echo "User   : $(whoami)"
+echo "Host   : $(hostname)"
+echo "Kernel : $(uname -r)"
+EOF
+chmod +x $BASE/core/version.sh
 
 # =========================
 
@@ -134,7 +155,7 @@ chmod +x $BASE/bin/help
 
 # =========================
 
-cat > $BASE/bin/lang << 'EOF'
+cat > $BASE/core/lang.sh << 'EOF'
 #!/bin/bash
 CONF="$HOME/.hyperion/config/lang.conf"
 
@@ -144,75 +165,95 @@ case "$1" in
 *) echo "lang --es | --en" ;;
 esac
 EOF
-chmod +x $BASE/bin/lang
+chmod +x $BASE/core/lang.sh
 
 # =========================
 
-# ZERO UPDATE
+# DELETE
 
 # =========================
 
-cat > $BASE/bin/zero << EOF
+cat > $BASE/core/delete.sh << 'EOF'
 #!/bin/bash
 
-if [ "$1" == "--update" ]; then
-echo ">> Updating ZERO EXIS..."
+echo "⚠️ Delete ZERO?"
+read -p "Type YES: " confirm
+
+[ "$confirm" != "YES" ] && exit
+
+rm -rf ~/.hyperion
+echo "ZERO eliminado"
+EOF
+chmod +x $BASE/core/delete.sh
+
+# =========================
+
+# UPDATE
+
+# =========================
+
+cat > $BASE/core/update.sh << EOF
+#!/bin/bash
+echo ">> Updating ZERO..."
 if [ ! -d "$BASE/repo" ]; then
 git clone "$REPO" "$BASE/repo"
 else
 cd "$BASE/repo" && git pull
 fi
 (cd "$BASE/repo" && ./setup.sh)
-else
-echo "ZERO EXIS CORE ACTIVE"
-fi
 EOF
+chmod +x $BASE/core/update.sh
+
+# =========================
+
+# MAIN ZERO COMMAND
+
+# =========================
+
+cat > $BASE/bin/zero << 'EOF'
+#!/bin/bash
+
+BASE="$HOME/.hyperion"
+
+clear
+$BASE/core/boot.sh
+$BASE/core/logo.sh
+$BASE/core/greeting.sh
+
+echo -e "\e[35m>> ZERO V8.6 - EXIS CORE\e[0m"
+
+while true; do
+echo -ne "\e[32mzero ⚡ \e[0m"
+read cmd args
+
+```
+case "$cmd" in
+    help) $BASE/core/help.sh ;;
+    about) $BASE/core/about.sh ;;
+    info|version) $BASE/core/version.sh ;;
+    lang) $BASE/core/lang.sh $args ;;
+    delete) [ "$args" == "--zero" ] && $BASE/core/delete.sh ;;
+    zero) [ "$args" == "--update" ] && $BASE/core/update.sh ;;
+    exit) break ;;
+    *) echo "Command not found" ;;
+esac
+```
+
+done
+EOF
+
 chmod +x $BASE/bin/zero
 
 # =========================
 
-# DELETE ZERO
+# PATH GLOBAL
 
 # =========================
 
-cat > $BASE/bin/delete << 'EOF'
-#!/bin/bash
-
-[ "$1" != "--zero" ] && echo "Uso: delete --zero" && exit
-
-echo "⚠️ Esto eliminará ZERO completamente"
-read -p "Type YES: " confirm
-
-[ "$confirm" != "YES" ] && exit
-
-rm -rf ~/.hyperion
-sed -i '/hyperion/d' ~/.zshrc
-
-echo "ZERO eliminado"
-EOF
-chmod +x $BASE/bin/delete
-
-# =========================
-
-# ZSH CONFIG
-
-# =========================
-
-cat > ~/.zshrc << 'EOF'
-export PATH="$HOME/.hyperion/bin:$PATH"
-
-clear
-
-~/.hyperion/core/boot.sh
-~/.hyperion/core/logo.sh
-~/.hyperion/core/greeting.sh
-
-echo -e "\e[35m>> ZERO V8.5 - EXIS ONLINE\e[0m"
-
-PROMPT='%F{magenta}┌─[%n@%m]%f %F{cyan}[%~]
-└─%F{green}⚡ %f'
-EOF
+if ! grep -q hyperion ~/.bashrc; then
+echo 'export PATH="$HOME/.hyperion/bin:$PATH"' >> ~/.bashrc
+fi
 
 echo ""
-echo ">> ZERO V8.5 - EXIS INSTALLED"
-echo ">> RUN: zsh"
+echo ">> ZERO INSTALLED"
+echo ">> RUN: zero"
